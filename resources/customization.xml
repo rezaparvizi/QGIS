@@ -1153,7 +1153,7 @@
       <widget objectName="Widget2" class="QWidget" label="About">
         <widget objectName="qgisIcon" class="QLabel" label=""/>
         <widget objectName="TextLabel4" class="QLabel" label="&lt;html>&lt;head>&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; />&lt;style type=&quot;text/css&quot;>&#xa;p, li { white-space: pre-wrap; }&#xa;&lt;/style>&lt;/head>&lt;body style=&quot; font-family:'Lucida Grande'; font-size:13pt; font-weight:400; font-style:normal;&quot;>&#xa;&lt;p style=&quot; margin-top:16px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:x-large; font-weight:600;&quot;>&lt;span style=&quot; font-size:x-large;&quot;>QGIS&lt;/span>&lt;/p>&lt;/body>&lt;/html>"/>
-        <widget objectName="label" class="QLabel" label="QGIS is licensed under the GNU General Public License"/>
+        <widget objectName="label" class="QLabel" label="تمام حقوق این نرم افزار متعلق به بنیاد نخبگان است"/>
         <widget objectName="label_2" class="QLabel" label="http://www.gnu.org/licenses"/>
         <widget objectName="btnQgisHome" class="QPushButton" label="QGIS Home Page"/>
         <widget objectName="btnQgisUser" class="QPushButton" label="Join our user mailing list"/>

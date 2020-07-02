@@ -25,7 +25,7 @@
    </property>
    <widget class="QMenu" name="mProjectMenu">
     <property name="title">
-     <string>Pro&amp;ject</string>
+     <string>پروژه</string>
     </property>
     <widget class="QMenu" name="mRecentProjectsMenu">
      <property name="title">
@@ -89,7 +89,7 @@
    </widget>
    <widget class="QMenu" name="mViewMenu">
     <property name="title">
-     <string>&amp;View</string>
+     <string>نمایش</string>
     </property>
     <widget class="QMenu" name="menuMeasure">
      <property name="title">
@@ -158,7 +158,7 @@
    </widget>
    <widget class="QMenu" name="mLayerMenu">
     <property name="title">
-     <string>&amp;Layer</string>
+     <string>لایه</string>
     </property>
     <widget class="QMenu" name="mNewLayerMenu">
      <property name="title">
@@ -228,7 +228,7 @@
    </widget>
    <widget class="QMenu" name="mPluginMenu">
     <property name="title">
-     <string>&amp;Plugins</string>
+     <string>پلاگین</string>
     </property>
     <addaction name="mActionManagePlugins"/>
     <addaction name="separator"/>
@@ -236,11 +236,11 @@
    </widget>
    <widget class="QMenu" name="mHelpMenu">
     <property name="title">
-     <string>&amp;Help</string>
+     <string>راهنما</string>
     </property>
     <widget class="QMenu" name="mMenuPluginHelp">
      <property name="title">
-      <string>Plugins</string>
+      <string>پلاگین</string>
      </property>
     </widget>
     <addaction name="mActionHelpContents"/>
@@ -259,7 +259,7 @@
    </widget>
    <widget class="QMenu" name="mSettingsMenu">
     <property name="title">
-     <string>&amp;Settings</string>
+     <string>تنظیمات</string>
     </property>
     <addaction name="mActionStyleManager"/>
     <addaction name="mActionCustomProjection"/>
@@ -271,7 +271,7 @@
    </widget>
    <widget class="QMenu" name="mRasterMenu">
     <property name="title">
-     <string>&amp;Raster</string>
+     <string>رستر</string>
     </property>
     <addaction name="mActionShowRasterCalculator"/>
     <addaction name="mActionShowAlignRasterTool"/>
@@ -279,12 +279,12 @@
    </widget>
    <widget class="QMenu" name="mVectorMenu">
     <property name="title">
-     <string>Vect&amp;or</string>
+     <string>وکتور</string>
     </property>
    </widget>
    <widget class="QMenu" name="mEditMenu">
     <property name="title">
-     <string>&amp;Edit</string>
+     <string>ویرایش</string>
     </property>
     <widget class="QMenu" name="menuSelect">
      <property name="title">
@@ -387,7 +387,7 @@
    </widget>
    <widget class="QMenu" name="mMeshMenu">
     <property name="title">
-     <string>&amp;Mesh</string>
+     <string>مش</string>
     </property>
     <addaction name="mActionShowMeshCalculator"/>
    </widget>

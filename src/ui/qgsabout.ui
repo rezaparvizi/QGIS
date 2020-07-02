@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>About QGIS</string>
+   <string>درباره نرم افزار</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -89,7 +89,7 @@
          <property name="wordWrap">
           <bool>true</bool>
          </property>
-         <item>
+         <!-- <item>
           <property name="text">
            <string>About</string>
           </property>
@@ -133,7 +133,7 @@
           <property name="text">
            <string>License</string>
           </property>
-         </item>
+         </item> -->
         </widget>
        </item>
       </layout>
@@ -213,7 +213,7 @@
                 <string>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Lucida Grande'; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:16px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:x-large; font-weight:600;&quot;&gt;&lt;span style=&quot; font-size:x-large;&quot;&gt;QGIS&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p style=&quot; margin-top:16px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:x-large; font-weight:600;&quot;&gt;&lt;span style=&quot; font-size:x-large;&quot;&gt;بنیاد نخبگان&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
@@ -238,7 +238,7 @@ p, li { white-space: pre-wrap; }
            <item>
             <widget class="QLabel" name="label_3">
              <property name="text">
-              <string>QGIS is licensed under the GNU General Public License</string>
+              <string>تمام حقوق این نرم افزار متعلق به بنیاد نخبگان است</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignCenter</set>
@@ -248,7 +248,7 @@ p, li { white-space: pre-wrap; }
            <item>
             <widget class="QLabel" name="label_2">
              <property name="text">
-              <string>https://www.gnu.org/licenses</string>
+              <string>https://www.bmn.ir</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignCenter</set>
@@ -260,7 +260,7 @@ p, li { white-space: pre-wrap; }
              <item>
               <widget class="QPushButton" name="btnQgisHome">
                <property name="text">
-                <string>QGIS Home Page</string>
+                <string>صفحه اصلی</string>
                </property>
                <property name="flat">
                 <bool>false</bool>
@@ -270,7 +270,7 @@ p, li { white-space: pre-wrap; }
              <item>
               <widget class="QPushButton" name="btnQgisUser">
                <property name="text">
-                <string>Join our User Mailing List</string>
+                <string>به ما بپیوندید</string>
                </property>
                <property name="flat">
                 <bool>false</bool>
