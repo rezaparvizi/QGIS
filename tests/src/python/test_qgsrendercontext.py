@@ -23,7 +23,9 @@ from qgis.core import (QgsRenderContext,
                        QgsRectangle,
                        QgsVectorSimplifyMethod,
                        QgsRenderedFeatureHandlerInterface,
-                       QgsDateTimeRange)
+                       QgsDateTimeRange,
+                       QgsMapClippingRegion,
+                       QgsGeometry)
 from qgis.PyQt.QtCore import QSize, QDateTime
 from qgis.PyQt.QtGui import QPainter, QImage
 from qgis.testing import start_app, unittest
@@ -214,6 +216,11 @@ class TestQgsRenderContext(unittest.TestCase):
         result_test_meters = r.convertFromMapUnits(meters_test_mapunits, QgsUnitTypes.RenderMetersInMapUnits)
         self.assertEqual(QgsDistanceArea.formatDistance(result_test_meters, 1, QgsUnitTypes.DistanceMeters, True),
                          QgsDistanceArea.formatDistance(meters_test, 1, QgsUnitTypes.DistanceMeters, True))
+
+        # attempting to convert to meters in map units when no extent is available should fallback to a very
+        # approximate degrees -> meters conversion
+        r.setExtent(QgsRectangle())
+        self.assertAlmostEqual(r.convertToPainterUnits(5555, QgsUnitTypes.RenderMetersInMapUnits), 0.0499, 3)
 
     def testConvertSingleUnit(self):
         ms = QgsMapSettings()
@@ -501,6 +508,25 @@ class TestQgsRenderContext(unittest.TestCase):
         rc = QgsRenderContext()
         self.assertEqual(rc.isTemporal(), False)
         self.assertIsNotNone(rc.temporalRange())
+
+    def testClippingRegion(self):
+        ms = QgsMapSettings()
+        rc = QgsRenderContext.fromMapSettings(ms)
+        self.assertFalse(rc.clippingRegions())
+        ms.addClippingRegion(QgsMapClippingRegion(QgsGeometry.fromWkt('Polygon(( 0 0, 1 0 , 1 1 , 0 1, 0 0 ))')))
+        ms.addClippingRegion(QgsMapClippingRegion(QgsGeometry.fromWkt('Polygon(( 10 0, 11 0 , 11 1 , 10 1, 10 0 ))')))
+        rc = QgsRenderContext.fromMapSettings(ms)
+        self.assertEqual(len(rc.clippingRegions()), 2)
+        self.assertEqual(rc.clippingRegions()[0].geometry().asWkt(), 'Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))')
+        self.assertEqual(rc.clippingRegions()[1].geometry().asWkt(), 'Polygon ((10 0, 11 0, 11 1, 10 1, 10 0))')
+
+    def testFeatureClipGeometry(self):
+        rc = QgsRenderContext()
+        self.assertTrue(rc.featureClipGeometry().isNull())
+        rc.setFeatureClipGeometry(QgsGeometry.fromWkt('Polygon(( 0 0, 1 0 , 1 1 , 0 1, 0 0 ))'))
+        self.assertEqual(rc.featureClipGeometry().asWkt(), 'Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))')
+        rc2 = QgsRenderContext(rc)
+        self.assertEqual(rc2.featureClipGeometry().asWkt(), 'Polygon ((0 0, 1 0, 1 1, 0 1, 0 0))')
 
 
 if __name__ == '__main__':

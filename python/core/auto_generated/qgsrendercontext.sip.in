@@ -12,7 +12,6 @@
 
 
 
-
 class QgsRenderContext : QgsTemporalRangeObject
 {
 %Docstring
@@ -27,6 +26,7 @@ to be rendered etc.
 %End
   public:
     QgsRenderContext();
+    ~QgsRenderContext();
 
     QgsRenderContext( const QgsRenderContext &rh );
 
@@ -43,6 +43,7 @@ to be rendered etc.
       RenderPartialOutput,
       RenderPreviewJob,
       RenderBlocking,
+      RenderSymbolPreview,
     };
     typedef QFlags<QgsRenderContext::Flag> Flags;
 
@@ -237,7 +238,7 @@ than the actual visible portion of that layer.
 %Docstring
 Returns the original extent of the map being rendered.
 
-Unlike extent(), this extent is always in the final destination CRS for the map
+Unlike :py:func:`~QgsRenderContext.extent`, this extent is always in the final destination CRS for the map
 render and represents the exact bounds of the map being rendered.
 
 .. seealso:: :py:func:`extent`
@@ -368,7 +369,7 @@ entire visible area.
 %Docstring
 Sets the original ``extent`` of the map being rendered.
 
-Unlike setExtent(), this extent is always in the final destination CRS for the map
+Unlike :py:func:`~QgsRenderContext.setExtent`, this extent is always in the final destination CRS for the map
 render and represents the exact bounds of the map being rendered.
 
 .. seealso:: :py:func:`mapExtent`
@@ -642,7 +643,7 @@ Converts a size from map units to the specified units.
 %Docstring
 Convert meter distances to active MapUnit values for QgsUnitTypes.RenderMetersInMapUnits
 \note
-When the sourceCrs() is geographic, the center of the Extent will be used
+When the :py:func:`~QgsRenderContext.sourceCrs` is geographic, the center of the Extent will be used
 
 .. versionadded:: 3.0
 %End
@@ -717,7 +718,7 @@ Stores a mask id as the "current" one.
 
     int currentMaskId() const;
 %Docstring
-Returns the current mask id, which can be used with maskPainter()
+Returns the current mask id, which can be used with :py:func:`~QgsRenderContext.maskPainter`
 
 .. seealso:: :py:func:`setCurrentMaskId`
 
@@ -786,6 +787,48 @@ Clears the specified custom rendering flag.
 .. seealso:: :py:func:`setCustomRenderingFlag`
 
 .. versionadded:: 3.12
+%End
+
+    QList< QgsMapClippingRegion > clippingRegions() const;
+%Docstring
+Returns the list of clipping regions to apply during the render.
+
+These regions are always in the final destination CRS for the map.
+
+.. versionadded:: 3.16
+%End
+
+    QgsGeometry featureClipGeometry() const;
+%Docstring
+Returns the geometry to use to clip features at render time.
+
+When vector features are rendered, they should be clipped to this geometry.
+
+.. warning::
+
+   The clipping must take effect for rendering the feature's symbol only,
+   and should never be applied directly to the feature being rendered. Doing so would
+   impact the results of rendering rules which rely on feature geometry, such as
+   a rule-based renderer using the feature's area.
+
+.. seealso:: :py:func:`setFeatureClipGeometry`
+
+
+.. versionadded:: 3.16
+%End
+
+    void setFeatureClipGeometry( const QgsGeometry &geometry );
+%Docstring
+Sets a ``geometry`` to use to clip features at render time.
+
+.. note::
+
+   This is not usually set directly, but rather specified by calling QgsMapSettings::py:func:`~QgsRenderContext.addClippingRegion`
+   prior to constructing a QgsRenderContext.
+
+.. seealso:: :py:func:`featureClipGeometry`
+
+.. versionadded:: 3.16
 %End
 
 };

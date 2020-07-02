@@ -2367,7 +2367,7 @@ void TestProcessingGui::testRangeWrapper()
 void TestProcessingGui::testMatrixDialog()
 {
   QgsProcessingParameterMatrix matrixParam( QString(), QString(), 3, false, QStringList() << QStringLiteral( "a" ) << QStringLiteral( "b" ) );
-  std::unique_ptr< QgsProcessingMatrixParameterDialog > dlg = qgis::make_unique< QgsProcessingMatrixParameterDialog>( nullptr, nullptr, &matrixParam );
+  std::unique_ptr< QgsProcessingMatrixParameterPanelWidget > dlg = qgis::make_unique< QgsProcessingMatrixParameterPanelWidget>( nullptr, &matrixParam );
   // variable length table
   QVERIFY( dlg->mButtonAdd->isEnabled() );
   QVERIFY( dlg->mButtonRemove->isEnabled() );
@@ -2375,7 +2375,7 @@ void TestProcessingGui::testMatrixDialog()
 
   QCOMPARE( dlg->table(), QVariantList() );
 
-  dlg = qgis::make_unique< QgsProcessingMatrixParameterDialog >( nullptr, nullptr, &matrixParam, QVariantList() << QStringLiteral( "a" ) << QStringLiteral( "b" ) << QStringLiteral( "c" ) << QStringLiteral( "d" ) << QStringLiteral( "e" ) << QStringLiteral( "f" ) );
+  dlg = qgis::make_unique< QgsProcessingMatrixParameterPanelWidget >( nullptr, &matrixParam, QVariantList() << QStringLiteral( "a" ) << QStringLiteral( "b" ) << QStringLiteral( "c" ) << QStringLiteral( "d" ) << QStringLiteral( "e" ) << QStringLiteral( "f" ) );
   QCOMPARE( dlg->table(), QVariantList() << QStringLiteral( "a" ) << QStringLiteral( "b" ) << QStringLiteral( "c" ) << QStringLiteral( "d" ) << QStringLiteral( "e" ) << QStringLiteral( "f" ) );
   dlg->addRow();
   QCOMPARE( dlg->table(), QVariantList() << QStringLiteral( "a" ) << QStringLiteral( "b" ) << QStringLiteral( "c" ) << QStringLiteral( "d" ) << QStringLiteral( "e" ) << QStringLiteral( "f" ) << QString() << QString() );
@@ -2383,7 +2383,7 @@ void TestProcessingGui::testMatrixDialog()
   QCOMPARE( dlg->table(), QVariantList() );
 
   QgsProcessingParameterMatrix matrixParam2( QString(), QString(), 3, true, QStringList() << QStringLiteral( "a" ) << QStringLiteral( "b" ) );
-  dlg = qgis::make_unique< QgsProcessingMatrixParameterDialog >( nullptr, nullptr, &matrixParam2, QVariantList() << QStringLiteral( "a" ) << QStringLiteral( "b" ) << QStringLiteral( "c" ) << QStringLiteral( "d" ) << QStringLiteral( "e" ) << QStringLiteral( "f" ) );
+  dlg = qgis::make_unique< QgsProcessingMatrixParameterPanelWidget >( nullptr, &matrixParam2, QVariantList() << QStringLiteral( "a" ) << QStringLiteral( "b" ) << QStringLiteral( "c" ) << QStringLiteral( "d" ) << QStringLiteral( "e" ) << QStringLiteral( "f" ) );
   QVERIFY( !dlg->mButtonAdd->isEnabled() );
   QVERIFY( !dlg->mButtonRemove->isEnabled() );
   QVERIFY( !dlg->mButtonRemoveAll->isEnabled() );
@@ -4139,7 +4139,7 @@ void TestProcessingGui::testLayoutWrapper()
     }
     else
     {
-      QCOMPARE( static_cast< QLineEdit * >( wrapper.wrappedWidget() )->text(), QStringLiteral( "l2" ) );
+      QCOMPARE( static_cast< QComboBox * >( wrapper.wrappedWidget() )->currentText(), QStringLiteral( "l2" ) );
     }
     wrapper.setWidgetValue( "l1", context );
     QCOMPARE( spy.count(), 2 );
@@ -4151,7 +4151,7 @@ void TestProcessingGui::testLayoutWrapper()
     }
     else
     {
-      QCOMPARE( static_cast< QLineEdit * >( wrapper.wrappedWidget() )->text(), QStringLiteral( "l1" ) );
+      QCOMPARE( static_cast< QComboBox * >( wrapper.wrappedWidget() )->currentText(), QStringLiteral( "l1" ) );
     }
 
     QLabel *l = wrapper.createWrappedLabel();
@@ -4174,7 +4174,7 @@ void TestProcessingGui::testLayoutWrapper()
     }
     else
     {
-      static_cast< QLineEdit * >( wrapper.wrappedWidget() )->setText( QStringLiteral( "aaaa" ) );
+      static_cast< QComboBox * >( wrapper.wrappedWidget() )->setCurrentText( QStringLiteral( "aaaa" ) );
     }
     QCOMPARE( spy.count(), 3 );
 
@@ -4199,7 +4199,7 @@ void TestProcessingGui::testLayoutWrapper()
     }
     else
     {
-      QCOMPARE( static_cast< QLineEdit * >( wrapper2.wrappedWidget() )->text(), QStringLiteral( "l2" ) );
+      QCOMPARE( static_cast< QComboBox * >( wrapper2.wrappedWidget() )->currentText(), QStringLiteral( "l2" ) );
     }
     wrapper2.setWidgetValue( "l1", context );
     QCOMPARE( spy2.count(), 2 );
@@ -4211,7 +4211,7 @@ void TestProcessingGui::testLayoutWrapper()
     }
     else
     {
-      QCOMPARE( static_cast< QLineEdit * >( wrapper2.wrappedWidget() )->text(), QStringLiteral( "l1" ) );
+      QCOMPARE( static_cast< QComboBox * >( wrapper2.wrappedWidget() )->currentText(), QStringLiteral( "l1" ) );
     }
     wrapper2.setWidgetValue( QVariant(), context );
     QCOMPARE( spy2.count(), 3 );
@@ -4223,14 +4223,14 @@ void TestProcessingGui::testLayoutWrapper()
     }
     else
     {
-      QVERIFY( static_cast< QLineEdit * >( wrapper2.wrappedWidget() )->text().isEmpty() );
+      QVERIFY( static_cast< QComboBox * >( wrapper2.wrappedWidget() )->currentText().isEmpty() );
     }
 
     // check signal
     if ( type != QgsProcessingGui::Modeler )
       static_cast< QComboBox * >( wrapper2.wrappedWidget() )->setCurrentIndex( 2 );
     else
-      static_cast< QLineEdit * >( wrapper2.wrappedWidget() )->setText( QStringLiteral( "aaa" ) );
+      static_cast< QComboBox * >( wrapper2.wrappedWidget() )->setCurrentText( QStringLiteral( "aaa" ) );
     QCOMPARE( spy2.count(), 4 );
 
     delete w;

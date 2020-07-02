@@ -20,11 +20,9 @@
 
 #include "qgsgui.h"
 #include "qgsapplication.h"
-#include "qgsbilinearrasterresampler.h"
 #include "qgsbrightnesscontrastfilter.h"
 #include "qgscontrastenhancement.h"
 #include "qgscoordinatetransform.h"
-#include "qgscubicrasterresampler.h"
 #include "qgsprojectionselectiondialog.h"
 #include "qgslogger.h"
 #include "qgsmapcanvas.h"
@@ -48,7 +46,6 @@
 #include "qgsrasterrange.h"
 #include "qgsrasterrenderer.h"
 #include "qgsrasterrendererregistry.h"
-#include "qgsrasterresamplefilter.h"
 #include "qgsrastertransparency.h"
 #include "qgssinglebandgrayrendererwidget.h"
 #include "qgssinglebandpseudocolorrendererwidget.h"
@@ -128,6 +125,9 @@ QgsRasterLayerProperties::QgsRasterLayerProperties( QgsMapLayer *lyr, QgsMapCanv
   connect( mStaticTemporalRange, &QRadioButton::toggled, mStaticWmstFrame, &QWidget::setEnabled );
   connect( mReferenceTime, &QCheckBox::toggled, mWmstReferenceTimeFrame, &QWidget::setEnabled );
 
+  if ( mRasterLayer && mRasterLayer->temporalProperties() )
+    connect( mRasterLayer->temporalProperties(), &QgsRasterLayerTemporalProperties::changed, this, &QgsRasterLayerProperties::temporalPropertiesChange );
+
   mBtnStyle = new QPushButton( tr( "Style" ) );
   QMenu *menuStyle = new QMenu( this );
   menuStyle->addAction( tr( "Load Style…" ), this, &QgsRasterLayerProperties::loadStyle_clicked );
@@ -162,6 +162,10 @@ QgsRasterLayerProperties::QgsRasterLayerProperties( QgsMapLayer *lyr, QgsMapCanv
 
   connect( mSliderContrast, &QAbstractSlider::valueChanged, mContrastSpinBox, &QSpinBox::setValue );
   connect( mContrastSpinBox, static_cast < void ( QSpinBox::* )( int ) > ( &QSpinBox::valueChanged ), mSliderContrast, &QAbstractSlider::setValue );
+
+  // gamma correction controls
+  connect( mSliderGamma, &QAbstractSlider::valueChanged, this, &QgsRasterLayerProperties::updateGammaSpinBox );
+  connect( mGammaSpinBox, static_cast < void ( QDoubleSpinBox::* )( double ) > ( &QDoubleSpinBox::valueChanged ), this, &QgsRasterLayerProperties::updateGammaSlider );
 
   // Connect saturation slider and spin box
   connect( sliderSaturation, &QAbstractSlider::valueChanged, spinBoxSaturation, &QSpinBox::setValue );
@@ -357,48 +361,10 @@ QgsRasterLayerProperties::QgsRasterLayerProperties( QgsMapLayer *lyr, QgsMapCanv
 
   //resampling
   mResamplingGroupBox->setSaveCheckedState( true );
+  mResamplingUtils.initWidgets( mRasterLayer, mZoomedInResamplingComboBox, mZoomedOutResamplingComboBox, mMaximumOversamplingSpinBox, mCbEarlyResampling );
+  mResamplingUtils.refreshWidgetsFromLayer();
+
   const QgsRasterRenderer *renderer = mRasterLayer->renderer();
-  mZoomedInResamplingComboBox->insertItem( 0, tr( "Nearest neighbour" ) );
-  mZoomedInResamplingComboBox->insertItem( 1, tr( "Bilinear" ) );
-  mZoomedInResamplingComboBox->insertItem( 2, tr( "Cubic" ) );
-  mZoomedOutResamplingComboBox->insertItem( 0, tr( "Nearest neighbour" ) );
-  mZoomedOutResamplingComboBox->insertItem( 1, tr( "Average" ) );
-
-  const QgsRasterResampleFilter *resampleFilter = mRasterLayer->resampleFilter();
-  //set combo boxes to current resampling types
-  if ( resampleFilter )
-  {
-    const QgsRasterResampler *zoomedInResampler = resampleFilter->zoomedInResampler();
-    if ( zoomedInResampler )
-    {
-      if ( zoomedInResampler->type() == QLatin1String( "bilinear" ) )
-      {
-        mZoomedInResamplingComboBox->setCurrentIndex( 1 );
-      }
-      else if ( zoomedInResampler->type() == QLatin1String( "cubic" ) )
-      {
-        mZoomedInResamplingComboBox->setCurrentIndex( 2 );
-      }
-    }
-    else
-    {
-      mZoomedInResamplingComboBox->setCurrentIndex( 0 );
-    }
-
-    const QgsRasterResampler *zoomedOutResampler = resampleFilter->zoomedOutResampler();
-    if ( zoomedOutResampler )
-    {
-      if ( zoomedOutResampler->type() == QLatin1String( "bilinear" ) ) //bilinear resampler does averaging when zooming out
-      {
-        mZoomedOutResamplingComboBox->setCurrentIndex( 1 );
-      }
-    }
-    else
-    {
-      mZoomedOutResamplingComboBox->setCurrentIndex( 0 );
-    }
-    mMaximumOversamplingSpinBox->setValue( resampleFilter->maxOversampling() );
-  }
 
   btnColorizeColor->setColorDialogTitle( tr( "Select Color" ) );
   btnColorizeColor->setContext( QStringLiteral( "symbology" ) );
@@ -543,7 +509,7 @@ QgsRasterLayerProperties::QgsRasterLayerProperties( QgsMapLayer *lyr, QgsMapCanv
 
   mResetColorRenderingBtn->setIcon( QgsApplication::getThemeIcon( QStringLiteral( "/mActionUndo.svg" ) ) );
 
-  QString title = QString( tr( "Layer Properties - %1" ) ).arg( lyr->name() );
+  QString title = tr( "Layer Properties — %1" ).arg( lyr->name() );
 
   if ( !mRasterLayer->styleManager()->isDefault( mRasterLayer->styleManager()->currentStyle() ) )
     title += QStringLiteral( " (%1)" ).arg( mRasterLayer->styleManager()->currentStyle() );
@@ -791,17 +757,17 @@ void QgsRasterLayerProperties::sync()
   QgsDebugMsg( QStringLiteral( "populate transparency tab" ) );
 
   /*
-   * Style tab (brightness and contrast)
+   * Style tab
    */
 
+  //set brightness, contrast and gamma
   QgsBrightnessContrastFilter *brightnessFilter = mRasterLayer->brightnessFilter();
   if ( brightnessFilter )
   {
     mSliderBrightness->setValue( brightnessFilter->brightness() );
     mSliderContrast->setValue( brightnessFilter->contrast() );
+    mGammaSpinBox->setValue( brightnessFilter->gamma() );
   }
-
-  //set the transparency slider
 
   /*
    * Transparent Pixel Tab
@@ -965,6 +931,7 @@ void QgsRasterLayerProperties::apply()
 
   mRasterLayer->brightnessFilter()->setBrightness( mSliderBrightness->value() );
   mRasterLayer->brightnessFilter()->setContrast( mSliderContrast->value() );
+  mRasterLayer->brightnessFilter()->setGamma( mGammaSpinBox->value() );
 
   QgsDebugMsg( QStringLiteral( "processing transparency tab" ) );
   /*
@@ -1063,34 +1030,7 @@ void QgsRasterLayerProperties::apply()
   // pixmapLegend->setScaledContents( true );
   // pixmapLegend->repaint();
 
-  QgsRasterResampleFilter *resampleFilter = mRasterLayer->resampleFilter();
-  if ( resampleFilter )
-  {
-    QgsRasterResampler *zoomedInResampler = nullptr;
-    QString zoomedInResamplingMethod = mZoomedInResamplingComboBox->currentText();
-    if ( zoomedInResamplingMethod == tr( "Bilinear" ) )
-    {
-      zoomedInResampler = new QgsBilinearRasterResampler();
-    }
-    else if ( zoomedInResamplingMethod == tr( "Cubic" ) )
-    {
-      zoomedInResampler = new QgsCubicRasterResampler();
-    }
-
-    resampleFilter->setZoomedInResampler( zoomedInResampler );
-
-    //raster resampling
-    QgsRasterResampler *zoomedOutResampler = nullptr;
-    QString zoomedOutResamplingMethod = mZoomedOutResamplingComboBox->currentText();
-    if ( zoomedOutResamplingMethod == tr( "Average" ) )
-    {
-      zoomedOutResampler = new QgsBilinearRasterResampler();
-    }
-
-    resampleFilter->setZoomedOutResampler( zoomedOutResampler );
-
-    resampleFilter->setMaxOversampling( mMaximumOversamplingSpinBox->value() );
-  }
+  mResamplingUtils.refreshLayerFromWidgets();
 
   // Hue and saturation controls
   QgsHueSaturationFilter *hueSaturationFilter = mRasterLayer->hueSaturationFilter();
@@ -1234,31 +1174,42 @@ void QgsRasterLayerProperties::updateSourceStaticTime()
   if ( mWmstGroup->isVisibleTo( this ) )
     uri[ QStringLiteral( "allowTemporalUpdates" ) ] = mWmstGroup->isChecked();
 
+
   if ( mWmstGroup->isEnabled() &&
        mRasterLayer->dataProvider() &&
        mRasterLayer->dataProvider()->temporalCapabilities()->hasTemporalCapabilities() )
   {
-    if ( mStaticTemporalRange->isChecked() )
-    {
-      QString time = mStartStaticDateTimeEdit->dateTime().toString( Qt::ISODateWithMs ) + '/' +
-                     mEndStaticDateTimeEdit->dateTime().toString( Qt::ISODateWithMs );
-      uri[ QStringLiteral( "time" ) ] = time;
-      uri[ QStringLiteral( "temporalSource" ) ] = QLatin1String( "provider" );
-    }
+    bool enableTime = !mDisableTime->isChecked();
 
-    if ( mProjectTemporalRange->isChecked() )
-    {
-      QgsDateTimeRange range;
+    uri[ QStringLiteral( "enableTime" ) ] = enableTime;
+    qobject_cast< QgsRasterLayerTemporalProperties * >( mRasterLayer->temporalProperties() )->setIntervalHandlingMethod( static_cast< QgsRasterDataProviderTemporalCapabilities::IntervalHandlingMethod >(
+          mFetchModeComboBox->currentData().toInt() ) );
 
-      if ( QgsProject::instance()->timeSettings() )
-        range = QgsProject::instance()->timeSettings()->temporalRange();
-      if ( range.begin().isValid() && range.end().isValid() )
+    // Don't do static temporal updates if temporal properties are active
+    if ( !mRasterLayer->temporalProperties()->isActive() )
+    {
+      if ( mStaticTemporalRange->isChecked() )
       {
-        QString time = range.begin().toString( Qt::ISODateWithMs ) + '/' +
-                       range.end().toString( Qt::ISODateWithMs );
-
+        QString time = mStartStaticDateTimeEdit->dateTime().toString( Qt::ISODateWithMs ) + '/' +
+                       mEndStaticDateTimeEdit->dateTime().toString( Qt::ISODateWithMs );
         uri[ QStringLiteral( "time" ) ] = time;
-        uri[ QStringLiteral( "temporalSource" ) ] = QLatin1String( "project" );
+        uri[ QStringLiteral( "temporalSource" ) ] = QLatin1String( "provider" );
+      }
+
+      if ( mProjectTemporalRange->isChecked() )
+      {
+        QgsDateTimeRange range;
+
+        if ( QgsProject::instance()->timeSettings() )
+          range = QgsProject::instance()->timeSettings()->temporalRange();
+        if ( range.begin().isValid() && range.end().isValid() )
+        {
+          QString time = range.begin().toString( Qt::ISODateWithMs ) + '/' +
+                         range.end().toString( Qt::ISODateWithMs );
+
+          uri[ QStringLiteral( "time" ) ] = time;
+          uri[ QStringLiteral( "temporalSource" ) ] = QLatin1String( "project" );
+        }
       }
     }
 
@@ -1272,11 +1223,6 @@ void QgsRasterLayerProperties::updateSourceStaticTime()
       if ( uri.contains( QStringLiteral( "referenceTime" ) ) )
         uri.remove( QStringLiteral( "referenceTime" ) );
     }
-    bool enableTime = !mDisableTime->isChecked();
-
-    uri[ QStringLiteral( "enableTime" ) ] = enableTime;
-    qobject_cast< QgsRasterLayerTemporalProperties * >( mRasterLayer->temporalProperties() )->setIntervalHandlingMethod( static_cast< QgsRasterDataProviderTemporalCapabilities::IntervalHandlingMethod >(
-          mFetchModeComboBox->currentData().toInt() ) );
   }
 
   if ( currentUri != uri )
@@ -1359,6 +1305,24 @@ void QgsRasterLayerProperties::setSourceStaticTimeState()
 
     mDisableTime->setChecked( !enableTime );
 
+    mWmstOptions->setEnabled( !mRasterLayer->temporalProperties()->isActive() );
+
+    if ( mRasterLayer->temporalProperties()->isActive() )
+      mWmstOptionsLabel->setText( tr( "The static temporal options below are disabled because the layer "
+                                      "temporal properties are active, to enable them disable temporal properties "
+                                      "in the temporal tab. " ) );
+    QgsDateTimeRange range;
+    if ( QgsProject::instance()->timeSettings() )
+      range = QgsProject::instance()->timeSettings()->temporalRange();
+
+    if ( !range.begin().isValid() || !range.end().isValid() )
+    {
+      mProjectTemporalRange->setEnabled( false );
+      mProjectTemporalRangeLabel->setText( tr( "The option below is disabled because the project temporal range "
+                                           "is not valid, update the project temporal range in the project properties "
+                                           "with valid values in order to use it here." ) );
+    }
+
     mWmstGroup->setChecked( uri.contains( QStringLiteral( "allowTemporalUpdates" ) ) &&
                             uri.value( QStringLiteral( "allowTemporalUpdates" ), true ).toBool() );
   }
@@ -1388,6 +1352,18 @@ void QgsRasterLayerProperties::passProjectTemporalRange_toggled( bool checked )
     else
       mLabel->setText( tr( "Project temporal range is not valid, can't use it here" ) );
   }
+}
+
+void QgsRasterLayerProperties::temporalPropertiesChange()
+{
+  mWmstOptions->setEnabled( !mRasterLayer->temporalProperties()->isActive() );
+
+  if ( mRasterLayer->temporalProperties()->isActive() )
+    mWmstOptionsLabel->setText( tr( "The static temporal options below are disabled because the layer "
+                                    "temporal properties are active, to enable them disable temporal properties "
+                                    "in the temporal tab. " ) );
+  else
+    mWmstOptionsLabel->clear();
 }
 
 void QgsRasterLayerProperties::mLayerOrigNameLineEd_textEdited( const QString &text )
@@ -2341,6 +2317,7 @@ void QgsRasterLayerProperties::mResetColorRenderingBtn_clicked()
   mBlendModeComboBox->setBlendMode( QPainter::CompositionMode_SourceOver );
   mSliderBrightness->setValue( 0 );
   mSliderContrast->setValue( 0 );
+  mGammaSpinBox->setValue( 1.0 );
   sliderSaturation->setValue( 0 );
   comboGrayscale->setCurrentIndex( ( int ) QgsHueSaturationFilter::GrayscaleOff );
   mColorizeCheck->setChecked( false );
@@ -2387,4 +2364,14 @@ void QgsRasterLayerProperties::showHelp()
   {
     QgsHelp::openHelp( QStringLiteral( "working_with_raster/raster_properties.html" ) );
   }
+}
+
+void QgsRasterLayerProperties::updateGammaSpinBox( int value )
+{
+  whileBlocking( mGammaSpinBox )->setValue( value / 100.0 );
+}
+
+void QgsRasterLayerProperties::updateGammaSlider( double value )
+{
+  whileBlocking( mSliderGamma )->setValue( value * 100 );
 }

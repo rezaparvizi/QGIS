@@ -833,6 +833,17 @@ QgsGeometry::OperationResult QgsGeometry::splitGeometry( const QgsPointSequence 
   QVector<QgsGeometry > newGeoms;
   QgsLineString splitLineString( splitLine );
 
+  /**
+   * QGIS uses GEOS algorithm to split geometries.
+   * Using 3D points in GEOS will returns an interpolation value which is the
+   * mean between geometries.
+   * On the contrary, in our logic, the interpolation is a linear interpolation
+   * on the split point. By dropping Z/M value, GEOS will returns the expected
+   * result. See https://github.com/qgis/QGIS/issues/33489
+   */
+  splitLineString.dropZValue();
+  splitLineString.dropMValue();
+
   QgsGeos geos( d->geometry.get() );
   mLastError.clear();
   QgsGeometryEngine::EngineOperationResult result = geos.splitGeometry( splitLineString, newGeoms, topological, topologyTestPoints, &mLastError );
@@ -2490,12 +2501,13 @@ QgsGeometry QgsGeometry::extrude( double x, double y )
 }
 
 ///@cond PRIVATE // avoid dox warning
-QVector<QgsPointXY> QgsGeometry::randomPointsInPolygon( int count, const std::function< bool( const QgsPointXY & ) > &acceptPoint, unsigned long seed, QgsFeedback *feedback ) const
+
+QVector<QgsPointXY> QgsGeometry::randomPointsInPolygon( int count, const std::function< bool( const QgsPointXY & ) > &acceptPoint, unsigned long seed, QgsFeedback *feedback, int maxTriesPerPoint ) const
 {
   if ( type() != QgsWkbTypes::PolygonGeometry )
     return QVector< QgsPointXY >();
 
-  return QgsInternalGeometryEngine::randomPointsInPolygon( *this, count, acceptPoint, seed, feedback );
+  return QgsInternalGeometryEngine::randomPointsInPolygon( *this, count, acceptPoint, seed, feedback, maxTriesPerPoint );
 }
 
 QVector<QgsPointXY> QgsGeometry::randomPointsInPolygon( int count, unsigned long seed, QgsFeedback *feedback ) const
@@ -2503,13 +2515,13 @@ QVector<QgsPointXY> QgsGeometry::randomPointsInPolygon( int count, unsigned long
   if ( type() != QgsWkbTypes::PolygonGeometry )
     return QVector< QgsPointXY >();
 
-  return QgsInternalGeometryEngine::randomPointsInPolygon( *this, count, []( const QgsPointXY & ) { return true; }, seed, feedback );
+  return QgsInternalGeometryEngine::randomPointsInPolygon( *this, count, []( const QgsPointXY & ) { return true; }, seed, feedback, 0 );
 }
 ///@endcond
 
-QByteArray QgsGeometry::asWkb() const
+QByteArray QgsGeometry::asWkb( QgsAbstractGeometry::WkbFlags flags ) const
 {
-  return d->geometry ? d->geometry->asWkb() : QByteArray();
+  return d->geometry ? d->geometry->asWkb( flags ) : QByteArray();
 }
 
 QVector<QgsGeometry> QgsGeometry::asGeometryCollection() const

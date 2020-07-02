@@ -74,9 +74,9 @@ TESTMAKE=ninja $(NINJA_OPTS)
 endif
 
 ifeq (,$(findstring $(DISTRIBUTION),"focal sid"))
-PYTHON_LIBRARY=$(shell python3-config --ldflags | sed -e 's\#-L\(.*\) -L/usr/lib -l\([^ ]*\) .*$$\#\1/lib\2.so\#')
+PYTHON_LIBRARY=$(shell python3-config --ldflags | sed -e 's,-L\(.*\) -L/usr/lib -l\([^ ]*\) .*$$,\1/lib\2.so,')
 else
-PYTHON_LIBRARY=$(shell python3-config --ldflags --embed | sed -e 's\#-L\(.*\) -L/usr/lib -l\([^ ]*\) .*$$\#\1/lib\2.so\#')
+PYTHON_LIBRARY=$(shell python3-config --ldflags --embed | sed -e 's,-L\(.*\) -L/usr/lib -l\([^ ]*\) .*$$,\1/lib\2.so,')
 endif
 
 CMAKE_OPTS := \
@@ -120,7 +120,7 @@ ifneq (,$(findstring $(DISTRIBUTION),"sid buster bionic eoan focal"))
 		-DWITH_3D=TRUE \
 		-DGEOS_LIBRARY=/usr/lib/$(DEB_BUILD_MULTIARCH)/libgeos_c.so
 
-ifneq (,$(findstring $(DISTRIBUTION),"sid buster eoan focal"))
+ifneq (,$(findstring $(DISTRIBUTION),"buster eoan focal"))
 $(shell test -f /usr/include/$(DEB_BUILD_MULTIARCH)/qt5/Qt3DExtras/qt3dextrasversion.h)
 ifneq (0,$(.SHELLSTATUS))
 # Qt3DExtras intentionally removed from debian (#895386) and in turn ubuntu
